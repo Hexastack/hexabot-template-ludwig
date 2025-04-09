@@ -40,9 +40,7 @@ except ImportError as e:
 
 ALL_FEATURES_PRESENT_ERROR = {"error": "entry must contain all input features"}
 
-COULD_NOT_RUN_INFERENCE_ERROR = {
-    "error": "Unexpected Error: could not run inference on model"
-}
+COULD_NOT_RUN_INFERENCE_ERROR = {"error": "Unexpected Error: could not run inference on model"}
 
 AUTH_TOKEN = os.getenv("AUTH_TOKEN", "TOKEN_MUST_BE_DEFINED")
 
@@ -68,18 +66,14 @@ def validate_and_get_project_name(repo_name: str) -> str:
     """
     # Check if the repo name contains exactly one '/'
     if repo_name.count("/") != 1:
-        raise ValueError(
-            "Invalid repository name format. It must be in 'Owner/ProjectName' format."
-        )
+        raise ValueError("Invalid repository name format. It must be in 'Owner/ProjectName' format.")
 
     # Split the repository name into owner and project name
     owner, project_name = repo_name.split("/")
 
     # Validate that both owner and project name are non-empty
     if not owner or not project_name:
-        raise ValueError(
-            "Invalid repository name. Both owner and project name must be non-empty."
-        )
+        raise ValueError("Invalid repository name. Both owner and project name must be non-empty.")
 
     # Return the project name if the validation is successful
     return project_name
@@ -96,9 +90,7 @@ def process_repo_name(repo_name: str, save_dir: Optional[str]) -> Tuple[str, str
     return repo_name, repo_dir, save_dir
 
 
-def download_model_from_huggingface(
-    repo_id: str, repo_dir: str, force_download: bool = True
-) -> None:
+def download_model_from_huggingface(repo_id: str, repo_dir: str, force_download: bool = True) -> None:
     """
     Download the model from Hugging Face if not already present in the local directory.
 
@@ -114,12 +106,7 @@ def download_model_from_huggingface(
 
         # Download the model from Hugging Face
         try:
-            snapshot_download(
-                repo_id=repo_id,
-                force_download=force_download,
-                local_dir=repo_dir,
-                repo_type="model",
-            )
+            snapshot_download(repo_id=repo_id, force_download=force_download, local_dir=repo_dir, repo_type="model")
         except Exception as e:
             logging.warning(f"Failed to download the model from hugging_face: {e}")
 
@@ -182,18 +169,12 @@ def load_model(
 
 
 def server(models, allowed_origins=None):
-    middleware = (
-        [Middleware(CORSMiddleware, allow_origins=allowed_origins)]
-        if allowed_origins
-        else None
-    )
+    middleware = [Middleware(CORSMiddleware, allow_origins=allowed_origins)] if allowed_origins else None
     app = FastAPI(middleware=middleware)
 
     @app.get("/")
     def check_health():
-        return NumpyJSONResponse(
-            {"message": "Ludwig server is up", "models": list(models.keys())}
-        )
+        return NumpyJSONResponse({"message": "Ludwig server is up", "models": list(models.keys())})
 
     @app.post("/predict")
     async def predict(request: Request):
@@ -209,9 +190,7 @@ def server(models, allowed_origins=None):
 
         async def predict_by_model(model_name: str, model: LudwigModel) -> dict:
             try:
-                entry, files = convert_input(
-                    form, model.model.input_features
-                )  # Input compatible with all models
+                entry, files = convert_input(form, model.model.input_features)  # Input compatible with all models
                 input_features = {f[COLUMN] for f in model.config["input_features"]}
                 if (entry.keys() & input_features) != input_features:
                     missing_features = set(input_features) - set(entry.keys())
@@ -246,9 +225,7 @@ def server(models, allowed_origins=None):
                 invalid_models = [name for name in model_names if name not in models]
                 if invalid_models:
                     return NumpyJSONResponse(
-                        {
-                            "error": f"Invalid model names: {invalid_models}. Available models: {list(models.keys())}."
-                        },
+                        {"error": f"Invalid model names: {invalid_models}. Available models: {list(models.keys())}."},
                         status_code=400,
                     )
                 target_models = {name: models[name] for name in model_names}
@@ -257,9 +234,7 @@ def server(models, allowed_origins=None):
                 target_models = models
 
             # Run
-            tasks = [
-                predict_by_model(name, model) for name, model in target_models.items()
-            ]
+            tasks = [predict_by_model(name, model) for name, model in target_models.items()]
             results = await asyncio.gather(*tasks)
             responses = {result["model"]: result["response"] for result in results}
             return NumpyJSONResponse(responses)
@@ -286,9 +261,7 @@ def server(models, allowed_origins=None):
         async def batch_predict_by_model(model_name: str, model: LudwigModel) -> dict:
             try:
                 data, files = convert_batch_input(form, model.model.input_features)
-                data_df = pd.DataFrame.from_records(
-                    data["data"], index=data.get("index"), columns=data["columns"]
-                )
+                data_df = pd.DataFrame.from_records(data["data"], index=data.get("index"), columns=data["columns"])
                 input_features = {f[COLUMN] for f in model.config["input_features"]}
 
                 if (set(data_df.columns) & input_features) != input_features:
@@ -309,9 +282,7 @@ def server(models, allowed_origins=None):
                     },
                 }
             except Exception as exc:
-                logger.exception(
-                    f"Failed to batch predict for model '{model_name}': {exc}"
-                )
+                logger.exception(f"Failed to batch predict for model '{model_name}': {exc}")
                 return {
                     "model": model_name,
                     "response": {
@@ -326,9 +297,7 @@ def server(models, allowed_origins=None):
                 invalid_models = [name for name in model_names if name not in models]
                 if invalid_models:
                     return NumpyJSONResponse(
-                        {
-                            "error": f"Invalid model names: {invalid_models}. Available models: {list(models.keys())}."
-                        },
+                        {"error": f"Invalid model names: {invalid_models}. Available models: {list(models.keys())}."},
                         status_code=400,
                     )
                 target_models = {name: models[name] for name in model_names}
@@ -336,10 +305,7 @@ def server(models, allowed_origins=None):
                 target_models = models
 
             # Run batch predictions
-            tasks = [
-                batch_predict_by_model(name, model)
-                for name, model in target_models.items()
-            ]
+            tasks = [batch_predict_by_model(name, model) for name, model in target_models.items()]
             results = await asyncio.gather(*tasks)
             responses = {result["model"]: result["response"] for result in results}
             return NumpyJSONResponse(responses)
@@ -430,9 +396,7 @@ def run_server(
     for model_name, repo_id in model_paths.items():
         if mode == "huggingface":
             repo_id, repo_dir, save_dir = process_repo_name(repo_id, "model")
-            models[model_name] = load_model(
-                save_dir, repo_dir, repo_id=repo_id, backend="local"
-            )
+            models[model_name] = load_model(save_dir, repo_dir, repo_id=repo_id, backend="local")
         elif mode == "local":
             models[model_name] = LudwigModel.load(repo_id, backend="local")
 
@@ -488,9 +452,7 @@ def cli(sys_argv):
         type=int,
     )
 
-    parser.add_argument(
-        "-H", "--host", help="host for server (default: 0.0.0.0)", default="0.0.0.0"
-    )
+    parser.add_argument("-H", "--host", help="host for server (default: 0.0.0.0)", default="0.0.0.0")
 
     parser.add_argument(
         "-ao",
