@@ -1,1 +1,8 @@
+# Run lint-staged for JavaScript/TypeScript/other staged files
+echo "🔍 Running lint-staged for staged files in Javascript/TypeScript..."
 npm run lint-staged
+
+# Run make lint for Python files (ensure pre-commit is set up)
+echo "🔍 Running make lint for Python files..."
+cd ludwig-nlu && make lint
+ 
